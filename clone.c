@@ -15,7 +15,11 @@ also receives a value througth   pointer
 #include <stdio.h>
 #include <sched.h>
 #include <sys/wait.h>
+#include <sys/time.h>
+#include <math.h>
 
+
+#define SEGUNDOS 1000000
 
 #define N_CLONES 4U // NUMBER OF CLONES TO BE CREATED
 #define ITERACIONES 2000000000
@@ -27,16 +31,16 @@ long double pi_acumm[N_CLONES] ={ 0} ;
 int child_fn(void * arg)
 {
 	double dummy=1;
-	int nthread = *((int *)arg);
-	pi_acumm[nthread] = 1;
-	long long n=0;
-	long long inicio = nthread*(ITERACIONES/N_CLONES);
-	long long fin = (nthread+1)*(ITERACIONES/N_CLONES);
+	int nClone = *((int *)arg);
 	
-	//printf("Proceso %d desde %lld hasta %lld\n", nthread, inicio, fin);
+	long long n=0;
+	long long inicio = nClone*(ITERACIONES/N_CLONES);
+	long long fin = (nClone+1)*(ITERACIONES/N_CLONES);
+	
+	//printf("Proceso %d desde %lld hasta %lld\n", nClone, inicio, fin);
 	
 	//Serie de PI
-	/**
+	
 	for(n=inicio; n<fin; n++)
 	{
 		if((n%2)==0) //Par
@@ -48,14 +52,24 @@ int child_fn(void * arg)
 			dummy = 1;
 		}
 		
-		pi_acumm[nthread] = pi_acumm[nthread] + (dummy / ((2*n)+1));
-		exit(0);
-	*/
+		pi_acumm[nClone] = pi_acumm[nClone] + (dummy / ((2*n)+1));
+		
+	}
 	exit(0);
 }	
 
 int main()
 {
+	struct timeval ts;
+	long long start_ts;
+	long long stop_ts;
+	long elapsed_time;
+
+		
+	gettimeofday(&ts, NULL);
+	start_ts = ts.tv_sec*1000000 + ts.tv_usec; // Tiempo inicial
+	
+	/**  block for clone child creation **********************/
 	void * child_stack[N_CLONES] = {NULL};
 	pid_t pid_chids[N_CLONES]= {0};
 	int clone_nmbr[N_CLONES] = {0};
@@ -91,9 +105,15 @@ int main()
 		free(child_stack[clone_maker]);
 	}
 	
-	
+	/** entrega de calculos y tiempos */
 	long double pi  = pi_acumm[0] +  pi_acumm[1] + pi_acumm[2] + pi_acumm[3] ;
 	printf("PI con %d iteraciones: %Lf\n", ITERACIONES, (pi*4));
+	
+	gettimeofday(&ts, NULL);
+	stop_ts = ts.tv_sec*1000000 + ts.tv_usec; // Tiempo final
+	elapsed_time = (int) (stop_ts - start_ts); //Tiempo transcurrido
+	
+	printf("Completado en %ld segundos\n",(elapsed_time/SEGUNDOS));
 	
 
 	return 0 ; 
