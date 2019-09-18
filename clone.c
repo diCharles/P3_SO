@@ -9,7 +9,7 @@ also receives a value througth   pointer
 
 
 // necesary headers
- #define _GNU_SOURCE // never forget this define 
+ #define _GNU_SOURCE // never forget this define  for threads
 
 #include <stdlib.h>
 #include <stdio.h>

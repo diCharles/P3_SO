@@ -9,7 +9,7 @@
 #define ITERACIONES 2000000000
 #define CUADRUPLE 4
 #define SEGUNDOS 1000000
-#define NTHREADS 3
+#define NTHREADS 4
 
 
 
@@ -25,7 +25,7 @@ void *serie(void *num_thread)
 	long long fin = (nthread+1)*(ITERACIONES/NTHREADS);
 	
 
-	printf("Proceso %d desde %lld hasta %lld\n", nthread, inicio, fin);
+	//printf("Proceso %d desde %lld hasta %lld\n", nthread, inicio, fin);
 	
 	//Serie de PI
 	for(n=inicio; n<fin; n++)
@@ -70,10 +70,11 @@ int main(void)
 	for(int x=0; x<NTHREADS; x++)
 	{
 		pthread_join(tid[x], NULL);	
-		printf("Integracion de proceso %d\n", x);
+		//printf("Integracion de proceso %d\n", x);
 	}
 	
 	//Impresion final
+
 	long double pi  = pi_acumm[0] +  pi_acumm[1] + pi_acumm[2] + pi_acumm[3] ;
 	printf("PI con %d iteraciones: %Lf\n", ITERACIONES, (pi*CUADRUPLE));
 	gettimeofday(&ts, NULL);

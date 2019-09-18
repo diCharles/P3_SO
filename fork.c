@@ -3,6 +3,9 @@
 Referencias de codigos ejemplo
 http://users.cs.cf.ac.uk/Dave.Marshall/C/node27.html
 https://sites.google.com/site/sanselgroup/unix/shared-memory
+https://stackoverflow.com/questions/8186953/shared-memory-with-two-processes-in-c
+
+https://en.wikipedia.org/wiki/File_system_permissions explains the 0777
 */
 //libraries for shared mem segments
 #include <stdio.h>
@@ -30,10 +33,18 @@ double child_fn(int identifier);
 
 int main()
 {
+	/** for elapsed time of program */
+	struct timeval ts;
+	long long start_ts;
+	long long stop_ts;
+	long elapsed_time;
+	gettimeofday(&ts, NULL);
+	start_ts = ts.tv_sec*1000000 + ts.tv_usec; // Tiempo inicial
 	
-	// set shared memory segment
 	
-	//                                                create segment if already does not exist in kernel
+	//*******  get and attach a  shared memory segment ********************************************************
+	
+	//                                                create segment if already does not exist in kernel or ed with permitions for R/W for all
     int key = shmget(0x0040000,sizeof( double), 0777 | IPC_CREAT );
     // Shmget validation.
     if( 0 >= key)
@@ -42,47 +53,58 @@ int main()
         exit(-1);
     }
 	
-	 // Shared varable, with this pointer childs will share context with brother and parent
-    long double * pi = shmat(key,NULL,0);
-    // Shmget validation.
+	 // Shared varable: between childs and parent
+    long double * pi = 0 ;
+	
+	//validate mem attachment, if success a mem link is created
+     pi = shmat(key,NULL,0);
     if( -1 == (*pi) )
     {
         printf("Shared memory allocation error.\n");
         exit(-1);
     }
-    // Initialize shared variable in zero.
-    *pi = 0;
+
 	
-	// fork specifyed children
-	pid_t pid_tmp;
-    // Loop counter.
+	//*******  get and attach a  shared memory segment ********************************************************
+	
+   //********  calculate pi ***********************************************************************************
+    *pi = 0;// shared varaible init
+	
+	// fork specifyed N_childs
     uint8_t child_maker = 0;
-    // Process creation.    
     for(child_maker = 0; child_maker < N_CHILDS; child_maker++)
     {
-        pid_tmp = fork();
+        pid_t  pid_tmp = fork();//child is forked
         if( 0 == pid_tmp )
-        {
-			// here a child is forked
+        {	
             *pi += child_fn(child_maker);
-			//here a child terminates
-            exit(0);
+            exit(0);// child terminates
         }
     }
 	
+	//before print wait child termination
 	for(child_maker = 0; child_maker < N_CHILDS; child_maker++)
     	wait(NULL);
 	
 	printf("PI con %d iteraciones: %Lf\n", ITERACIONES, (*pi)*4);
+	//********  calculate pi ***********************************************************************************
 	
+	/** print elapsed time of the program */
+	gettimeofday(&ts, NULL);
+	stop_ts = ts.tv_sec*1000000 + ts.tv_usec; // Tiempo final
+	elapsed_time = (int) (stop_ts - start_ts); //Tiempo transcurrido
+	printf("Completado en %ld segundos\n",(elapsed_time/SEGUNDOS));
+	
+	//destroy mem link with shmdt.
 	
   return ( 0);
 }
 
-/** this function will be called */
+/** this function will be called by childs  and will calculate 
+	and return a specific section of leibniz series				*/
 double child_fn(int identifier)
 {
-	//calculate and return a specific section of leibniz series 
+	 
 	double dummy=1;
 	int nchild = identifier;
 	
@@ -91,8 +113,8 @@ double child_fn(int identifier)
 	long long fin = (nchild+1)*(ITERACIONES/N_CHILDS);
 	
 	//printf("Proceso %d desde %lld hasta %lld\n", nchild, inicio, fin);
-	long double  pi_accum = 1;
-	/***
+	long double  pi_accum = 0;
+	
 	//Serie de PI
 
 	for(n=inicio; n<fin; n++)
@@ -108,6 +130,6 @@ double child_fn(int identifier)
 		
 		pi_accum = pi_accum + (dummy / ((2*n)+1));	
 	}
-	**/
+	
 	return ( pi_accum ) ;
 }
