@@ -23,7 +23,7 @@ int main(void)
 	//Serie de PI
 	for(long long n=0; n<ITERACIONES; n++)
 	{
-		if((n%2)==0) //Par
+		if((n & 0b1 ) == 0) //Par
 			dummy = -1;
 		else		//Impar
 			dummy = 1;

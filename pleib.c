@@ -9,9 +9,12 @@
 #define ITERACIONES 2000000000
 #define CUADRUPLE 4
 #define SEGUNDOS 1000000
-#define NTHREADS 4
+#define NTHREADS 3
 
-long double pi=0;
+
+
+/** father global varaibles can be shared between threads*/
+long double pi_acumm[NTHREADS] ={ 0} ;
 
 void *serie(void *num_thread)
 {
@@ -20,6 +23,8 @@ void *serie(void *num_thread)
 	long long n=0;
 	long long inicio = nthread*(ITERACIONES/NTHREADS);
 	long long fin = (nthread+1)*(ITERACIONES/NTHREADS);
+	
+
 	printf("Proceso %d desde %lld hasta %lld\n", nthread, inicio, fin);
 	
 	//Serie de PI
@@ -34,8 +39,9 @@ void *serie(void *num_thread)
 			dummy = 1;
 		}
 		
-		pi = pi + (dummy / ((2*n)+1));
+		pi_acumm[nthread] = pi_acumm[nthread] + (dummy / ((2*n)+1));
 	}
+
 }
 
 int main(void)
@@ -50,10 +56,13 @@ int main(void)
 	gettimeofday(&ts, NULL);
 	start_ts = ts.tv_sec*1000000 + ts.tv_usec; // Tiempo inicial
 	
+	
 	//Crea los hilos
 	for(int i=0; i<NTHREADS; i++)
 	{
+		
 		threadArr[i] = i;
+		
 		pthread_create(&tid[i], NULL, serie, (void*) &threadArr[i]);
 	}
 	
@@ -65,11 +74,15 @@ int main(void)
 	}
 	
 	//Impresion final
+	long double pi  = pi_acumm[0] +  pi_acumm[1] + pi_acumm[2] + pi_acumm[3] ;
 	printf("PI con %d iteraciones: %Lf\n", ITERACIONES, (pi*CUADRUPLE));
 	gettimeofday(&ts, NULL);
 	stop_ts = ts.tv_sec*1000000 + ts.tv_usec; // Tiempo final
-	elapsed_time = (int) (stop_ts - start_ts); //Tienpo transcurrido
+	elapsed_time = (int) (stop_ts - start_ts); //Tiempo transcurrido
+	
+	
 	printf("Completado en %ld segundos\n",(elapsed_time/SEGUNDOS));
+	
 	
 	return 0;	
 }
