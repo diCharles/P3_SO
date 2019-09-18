@@ -26,16 +26,39 @@ long double pi_acumm[N_CLONES] ={ 0} ;
 
 int child_fn(void * arg)
 {
-		int val = * ((int *) arg ) ;
-		printf("clonated child  received %d \n", val);
-		pi_acumm[val] +=1 ;
+	double dummy=1;
+	int nthread = *((int *)arg);
+	pi_acumm[nthread] = 1;
+	long long n=0;
+	long long inicio = nthread*(ITERACIONES/N_CLONES);
+	long long fin = (nthread+1)*(ITERACIONES/N_CLONES);
+	
+	//printf("Proceso %d desde %lld hasta %lld\n", nthread, inicio, fin);
+	
+	//Serie de PI
+	/**
+	for(n=inicio; n<fin; n++)
+	{
+		if((n%2)==0) //Par
+		{
+			dummy = -1;
+		}
+			else		//Impar
+		{
+			dummy = 1;
+		}
+		
+		pi_acumm[nthread] = pi_acumm[nthread] + (dummy / ((2*n)+1));
 		exit(0);
+	*/
+	exit(0);
 }	
 
 int main()
 {
 	void * child_stack[N_CLONES] = {NULL};
 	pid_t pid_chids[N_CLONES]= {0};
+	int clone_nmbr[N_CLONES] = {0};
 	
 	int clone_maker = 0 ;
 	for(clone_maker = 0 ; clone_maker<N_CLONES; clone_maker++)
@@ -44,8 +67,8 @@ int main()
 		
 		child_stack[clone_maker]= malloc(1024*1024);
 		//creating child with a given value
-		int val_to_child = 1;
-		pid_chids[clone_maker] = clone( child_fn , child_stack[clone_maker] + (1024 * 1024) , SIGCHLD | CLONE_VM , (void * ) (&val_to_child)); 
+		clone_nmbr[clone_maker]= clone_maker;
+		pid_chids[clone_maker] = clone( child_fn , child_stack[clone_maker] + (1024 * 1024) , SIGCHLD | CLONE_VM , (void * ) (&clone_nmbr[clone_maker])); 
 		
 		/** check if any of previous proccess went wrong*/
 		if(  (NULL== child_stack[clone_maker])  ||  (0 > pid_chids[clone_maker])   )
@@ -60,11 +83,15 @@ int main()
 	// wait until  clone childs finished
 	for(clone_maker = 0 ; clone_maker<N_CLONES; clone_maker++)
 	{
-		
 		wait(NULL);
-		//free clone child mem
+	}
+	/** watch out free of memory*/
+	for(clone_maker = 0 ; clone_maker<N_CLONES; clone_maker++)
+	{
 		free(child_stack[clone_maker]);
 	}
+	
+	
 	long double pi  = pi_acumm[0] +  pi_acumm[1] + pi_acumm[2] + pi_acumm[3] ;
 	printf("PI con %d iteraciones: %Lf\n", ITERACIONES, (pi*4));
 	
